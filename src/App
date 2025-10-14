@@ -1,0 +1,1703 @@
+import React, { useState, useEffect } from 'react';
+import { Lightbulb, Sprout, Pause, Archive, Home, Plus, Info, X, Edit2, Trash2, MoreVertical, Briefcase, User, Settings, DollarSign, GraduationCap, Clock, Users, Compass, Wrench, Heart, ChevronDown, ChevronUp, Unlock } from 'lucide-react';
+
+export default function IdeaNavigator() {
+  // Initialize state from localStorage or defaults
+  const [screen, setScreen] = useState('welcome');
+  const [mode, setMode] = useState(() => localStorage.getItem('mode') || 'personal');
+  const [showInfo, setShowInfo] = useState(false);
+  const [showMotivatorInfo, setShowMotivatorInfo] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState(null);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [motivator, setMotivator] = useState(() => localStorage.getItem('motivator') || null);
+  const [unlockStep, setUnlockStep] = useState('select');
+  const [selectedUnlocks, setSelectedUnlocks] = useState([]);
+  const [unlockAnswer, setUnlockAnswer] = useState('');
+  const [showReflection, setShowReflection] = useState(false);
+  const [pendingIdeaForUnlock, setPendingIdeaForUnlock] = useState(null);
+  const [currentIdea, setCurrentIdea] = useState({
+    text: '',
+    excitement: '',
+    need: '',
+    energy: 5,
+    feel: '',
+    alignment: 5,
+    mode: 'personal',
+    unlock: null,
+    unlockAnswer: '',
+    reflectionAnswers: {}
+  });
+  const [ideas, setIdeas] = useState(() => {
+    const saved = localStorage.getItem('ideas');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, text: 'Create a modular morning routine journal', status: 'parked', value: 8, energy: 7, alignment: 4, date: 'Nov 15', mode: 'personal', unlock: null },
+      { id: 2, text: 'Build a recipe app for ADHD cooking', status: 'active', value: 7, energy: 8, alignment: 8, date: 'Nov 20', mode: 'personal', unlock: 'skills', unlockAnswer: 'Learn React basics through a weekend tutorial' },
+      { id: 3, text: 'Start a podcast about neurodivergent creativity', status: 'released', value: 6, energy: 4, alignment: 3, date: 'Nov 10', mode: 'personal', unlock: null },
+      { id: 4, text: 'Propose new team workflow system', status: 'active', value: 8, energy: 7, alignment: 7, date: 'Nov 18', mode: 'work', unlock: 'people', unlockAnswer: 'Talk to Sarah about her perspective on current pain points' },
+      { id: 5, text: 'Launch internal mentorship program', status: 'parked', value: 7, energy: 5, alignment: 4, date: 'Nov 12', mode: 'work', unlock: null }
+    ];
+  });
+
+  // Save to localStorage whenever ideas, mode, or motivator changes
+  useEffect(() => {
+    localStorage.setItem('ideas', JSON.stringify(ideas));
+  }, [ideas]);
+
+  useEffect(() => {
+    localStorage.setItem('mode', mode);
+  }, [mode]);
+
+  useEffect(() => {
+    if (motivator) {
+      localStorage.setItem('motivator', motivator);
+    }
+  }, [motivator]);
+
+  // Check if user has completed welcome flow
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+    if (hasSeenWelcome && !motivator) {
+      setScreen('home');
+    } else if (hasSeenWelcome && motivator) {
+      setScreen('home');
+    }
+  }, []);
+
+  const unlockOptions = [
+    { id: 'resources', label: 'Resources / Budget', icon: DollarSign, color: 'emerald' },
+    { id: 'skills', label: 'Skills / Knowledge', icon: GraduationCap, color: 'blue' },
+    { id: 'time', label: 'Time / Schedule', icon: Clock, color: 'amber' },
+    { id: 'people', label: 'People / Support', icon: Users, color: 'purple' },
+    { id: 'clarity', label: 'Clarity / Direction', icon: Compass, color: 'cyan' },
+    { id: 'tools', label: 'Tools / Materials', icon: Wrench, color: 'orange' },
+    { id: 'confidence', label: 'Confidence / Mindset', icon: Heart, color: 'rose' }
+  ];
+
+  const reflectiveQuestions = {
+    resources: [
+      "If I had to make progress with only what I have right now, what would my first creative move be?",
+      "Which resource am I assuming I need that might actually be optional?"
+    ],
+    skills: [
+      "What's the one skill gap that, if filled, would make the rest feel easier or irrelevant?",
+      "Do I truly lack this skill, or just confidence using what I already know?"
+    ],
+    time: [
+      "Am I underestimating the time it takes, or overestimating what must be done?",
+      "If I only had two focused hours a week for this, what would I prioritize?"
+    ],
+    people: [
+      "Who would genuinely be energized by helping with this — and have I asked them yet?",
+      "Am I seeking help from people who understand the goal, or those who just care about me?"
+    ],
+    clarity: [
+      "What outcome would make me proud six months from now — even if nothing else happened?",
+      "Which part of this project am I avoiding defining?"
+    ],
+    tools: [
+      "What's the simplest toolset that would let me start today?",
+      "Am I overcomplicating the materials, or is there a scrappier version?"
+    ],
+    confidence: [
+      "What story am I telling myself about why this will be hard — and what if the opposite were true?",
+      "What would I tell my best friend if they doubted themselves on this?"
+    ]
+  };
+
+  const getMomentumQuestion = () => {
+    if (!motivator) return "What's one small step you could take this week?";
+    
+    const questions = {
+      advancement: "What's one 30-minute task that would show visible progress?",
+      madness: "What bold move would prove you're serious about mastering this?",
+      individuality: "What's the most authentic first step that feels uniquely yours?",
+      purpose: "Who's the first person you could talk to about this idea's potential impact?"
+    };
+    
+    return questions[motivator];
+  };
+
+  const questions = [
+    { id: 1, text: "I am driven by the idea of receiving a promotion or advancing in my career.", category: "advancement" },
+    { id: 2, text: "Completing tasks efficiently gives me a strong sense of satisfaction.", category: "advancement" },
+    { id: 3, text: "Reaching team goals motivates me to give my best effort.", category: "advancement" },
+    { id: 4, text: "I thrive on competition and opposition from others.", category: "madness" },
+    { id: 5, text: "The idea of proving others wrong pushes me to succeed.", category: "madness" },
+    { id: 6, text: "Mastery in my field, to the point of being the best, is my ultimate goal.", category: "madness" },
+    { id: 7, text: "Recognition for my accomplishments is important to me.", category: "madness" },
+    { id: 8, text: "I am motivated by the desire to create a unique lifestyle for myself.", category: "individuality" },
+    { id: 9, text: "Being recognized for my individuality is important to me.", category: "individuality" },
+    { id: 10, text: "Financial security drives many of my decisions.", category: "individuality" },
+    { id: 11, text: "I am driven by the desire to make a lasting impact on the world.", category: "purpose" },
+    { id: 12, text: "Helping others achieve their goals motivates me.", category: "purpose" },
+    { id: 13, text: "I am motivated by the possibility of bringing about meaningful change.", category: "purpose" },
+    { id: 14, text: "My work must align with a higher purpose or mission.", category: "purpose" }
+  ];
+
+  const motivatorInfo = {
+    advancement: {
+      title: "Advancement",
+      description: "You're energized by tangible progress and results. Promotions, efficiency, hitting goals — these fuel you. You thrive when you can see clear forward momentum and measure your growth.",
+      color: "blue"
+    },
+    madness: {
+      title: "Madness",
+      description: "You're driven by competition, mastery, and excellence. You love the challenge of being exceptional, proving what's possible, and standing out. Boundaries exist to be pushed.",
+      color: "red"
+    },
+    individuality: {
+      title: "Individuality",
+      description: "You're motivated by freedom, authenticity, and creating life on your terms. Self-expression, autonomy, and building something uniquely yours — that's what lights you up.",
+      color: "purple"
+    },
+    purpose: {
+      title: "Purpose",
+      description: "You're inspired by meaningful impact and contribution. Your work needs to matter beyond yourself — whether through helping others, creating change, or aligning with deeper values.",
+      color: "green"
+    }
+  };
+
+  const getPersonalizedPrompt = (stage, defaultPrompt) => {
+    if (!motivator) return defaultPrompt;
+    
+    const prompts = {
+      excitement: {
+        advancement: "What progress or result would this create?",
+        madness: "What would mastering this prove about your capabilities?",
+        individuality: "How does this express who you uniquely are?",
+        purpose: "What meaningful impact would this have?"
+      },
+      need: {
+        advancement: "What goal or milestone would this help you reach?",
+        madness: "What would this help you master or excel at?",
+        individuality: "What freedom or autonomy would this create?",
+        purpose: "Who would benefit from this, and how?"
+      }
+    };
+    
+    return prompts[stage]?.[motivator] || defaultPrompt;
+  };
+
+  const getPersonalizedCoaching = () => {
+    if (!motivator) return "You create freely and wisely — capturing this is progress, not postponement.";
+    
+    const coaching = {
+      advancement: "You're making measurable progress by clarifying your ideas. Each step forward counts.",
+      madness: "Capturing this idea proves you're serious about mastery. You're building your competitive edge.",
+      individuality: "This idea is uniquely yours. You're honoring your authentic vision by giving it space.",
+      purpose: "You're aligning your creativity with your values. This idea could ripple outward in ways you can't yet see."
+    };
+    
+    return coaching[motivator];
+  };
+
+  const calculateMotivator = () => {
+    const scores = {
+      advancement: 0,
+      madness: 0,
+      individuality: 0,
+      purpose: 0
+    };
+    
+    questions.forEach(q => {
+      if (answers[q.id]) {
+        scores[q.category] += answers[q.id];
+      }
+    });
+    
+    const topMotivator = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+    
+    setMotivator(topMotivator);
+    setScreen('motivator-result');
+  };
+
+  const resetIdea = () => {
+    setCurrentIdea({
+      text: '',
+      excitement: '',
+      need: '',
+      energy: 5,
+      feel: '',
+      alignment: 5,
+      mode: mode,
+      unlock: null,
+      unlockAnswer: '',
+      reflectionAnswers: {}
+    });
+    setSelectedUnlocks([]);
+    setUnlockAnswer('');
+    setUnlockStep('select');
+    setShowReflection(false);
+  };
+
+  const saveIdea = (status, scores) => {
+    const newIdea = {
+      id: Date.now(),
+      text: currentIdea.text,
+      status,
+      value: scores.value,
+      energy: scores.energy,
+      alignment: scores.alignment,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      mode: currentIdea.mode,
+      unlock: null,
+      unlockAnswer: '',
+      reflectionAnswers: {}
+    };
+    
+    setIdeas(prevIdeas => [newIdea, ...prevIdeas]);
+    setPendingIdeaForUnlock(newIdea);
+    
+    setCurrentIdea({
+      text: '',
+      excitement: '',
+      need: '',
+      energy: 5,
+      feel: '',
+      alignment: 5,
+      mode: mode,
+      unlock: null,
+      unlockAnswer: '',
+      reflectionAnswers: {}
+    });
+    setSelectedUnlocks([]);
+    setUnlockAnswer('');
+    setUnlockStep('select');
+    setShowReflection(false);
+    
+    if (status === 'active') {
+      setScreen('unlock-select');
+    } else {
+      setPendingIdeaForUnlock(null);
+      setScreen('garden');
+    }
+  };
+
+  const saveUnlockToIdea = () => {
+    if (!pendingIdeaForUnlock) {
+      console.error('No pending idea for unlock');
+      setScreen('garden');
+      return;
+    }
+    
+    setIdeas(prevIdeas => {
+      return prevIdeas.map(idea => {
+        if (idea.id === pendingIdeaForUnlock.id) {
+          return {
+            ...idea,
+            unlock: selectedUnlocks[0],
+            unlockAnswer: unlockAnswer,
+            reflectionAnswers: currentIdea.reflectionAnswers
+          };
+        }
+        return idea;
+      });
+    });
+    
+    setPendingIdeaForUnlock(null);
+    
+    setCurrentIdea({
+      text: '',
+      excitement: '',
+      need: '',
+      energy: 5,
+      feel: '',
+      alignment: 5,
+      mode: mode,
+      unlock: null,
+      unlockAnswer: '',
+      reflectionAnswers: {}
+    });
+    setSelectedUnlocks([]);
+    setUnlockAnswer('');
+    setUnlockStep('select');
+    setShowReflection(false);
+    
+    setScreen('coach');
+  };
+
+  const updateIdeaStatus = (ideaId, newStatus) => {
+    setIdeas(ideas.map(idea => 
+      idea.id === ideaId ? {...idea, status: newStatus} : idea
+    ));
+    setSelectedIdea(null);
+  };
+
+  const updateIdeaText = (ideaId, newText) => {
+    setIdeas(ideas.map(idea => 
+      idea.id === ideaId ? {...idea, text: newText} : idea
+    ));
+  };
+
+  const updateIdeaUnlock = (ideaId, unlock, answer) => {
+    setIdeas(ideas.map(idea => 
+      idea.id === ideaId ? {...idea, unlock, unlockAnswer: answer} : idea
+    ));
+  };
+
+  const deleteIdea = (ideaId) => {
+    if (window.confirm('Are you sure you want to permanently delete this idea?')) {
+      setIdeas(ideas.filter(idea => idea.id !== ideaId));
+      setSelectedIdea(null);
+    }
+  };
+
+  const filteredIdeas = ideas.filter(i => i.mode === mode);
+
+  // WELCOME SCREEN
+  if (screen === 'welcome') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
+        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className="inline-block p-4 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full shadow-lg mb-4">
+              <Lightbulb className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-3">Welcome to Idea Navigator</h1>
+            <p className="text-lg text-gray-600">Capture the spark. Clarify the pull. Choose with peace.</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-3">✨ Unlock Personalized Guidance</h2>
+            <p className="text-gray-700 mb-4">
+              Take a quick 2-minute questionnaire to discover what drives you. We'll tailor every suggestion to match your unique motivations.
+            </p>
+            <p className="text-sm text-gray-600 italic">
+              This helps us speak your language and guide you in ways that actually resonate.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => setScreen('questionnaire')}
+              className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+            >
+              Take the Questionnaire
+            </button>
+            
+            <button
+              onClick={() => setScreen('home')}
+              className="w-full py-4 bg-white hover:bg-gray-50 text-gray-600 border-2 border-gray-300 rounded-xl font-semibold transition-all"
+            >
+              Skip for Now
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-gray-500 mt-4">
+            You can take this questionnaire anytime from settings
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // QUESTIONNAIRE SCREEN
+  if (screen === 'questionnaire') {
+    const currentQuestion = questions[questionIndex];
+    const progress = ((questionIndex + 1) / questions.length) * 100;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-6">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Question {questionIndex + 1} of {questions.length}</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-8">{currentQuestion.text}</h2>
+            
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map(value => (
+                <button
+                  key={value}
+                  onClick={() => {
+                    setAnswers({...answers, [currentQuestion.id]: value});
+                    if (questionIndex < questions.length - 1) {
+                      setTimeout(() => setQuestionIndex(questionIndex + 1), 200);
+                    } else {
+                      setTimeout(() => calculateMotivator(), 200);
+                    }
+                  }}
+                  className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                    answers[currentQuestion.id] === value
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-gray-800">
+                      {value === 1 ? 'Strongly Disagree' : 
+                       value === 2 ? 'Disagree' :
+                       value === 3 ? 'Neutral' :
+                       value === 4 ? 'Agree' :
+                       'Strongly Agree'}
+                    </span>
+                    <span className="text-2xl font-bold text-indigo-600">{value}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {questionIndex > 0 && (
+              <button
+                onClick={() => setQuestionIndex(questionIndex - 1)}
+                className="mt-6 text-gray-600 hover:text-gray-800"
+              >
+                ← Back
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // MOTIVATOR RESULT SCREEN
+  if (screen === 'motivator-result') {
+    const info = motivatorInfo[motivator];
+    const colorClasses = {
+      blue: 'from-blue-400 to-cyan-400',
+      red: 'from-red-400 to-orange-400',
+      purple: 'from-purple-400 to-pink-400',
+      green: 'from-green-400 to-emerald-400'
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
+        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className={`inline-block p-4 bg-gradient-to-br ${colorClasses[info.color]} rounded-full shadow-lg mb-4`}>
+              <Lightbulb className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-3">Your Rocket Fuel: {info.title}</h1>
+            <p className="text-lg text-gray-600">{info.description}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 mb-6">
+            <p className="text-gray-700">
+              We'll now personalize your experience based on what drives you. Every prompt, suggestion, and coaching message will speak to your {info.title.toLowerCase()} motivation.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setScreen('home')}
+            className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+          >
+            Start Navigating Ideas
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // MOTIVATOR INFO MODAL
+  const MotivatorInfoModal = () => {
+    const info = motivatorInfo[motivator];
+    const colorClasses = {
+      blue: 'from-blue-400 to-cyan-400',
+      red: 'from-red-400 to-orange-400',
+      purple: 'from-purple-400 to-pink-400',
+      green: 'from-green-400 to-emerald-400'
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowMotivatorInfo(false)}>
+        <div className="bg-white rounded-2xl p-6 max-w-lg" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-xl font-bold text-gray-800">Your Motivator</h3>
+            <button onClick={() => setShowMotivatorInfo(false)} className="text-gray-500 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="text-center mb-6">
+            <div className={`inline-block p-3 bg-gradient-to-br ${colorClasses[info.color]} rounded-full shadow-lg mb-3`}>
+              <Lightbulb className="w-8 h-8 text-white" />
+            </div>
+            <h4 className="text-2xl font-bold text-gray-800 mb-2">{info.title}</h4>
+            <p className="text-gray-600">{info.description}</p>
+          </div>
+
+          <button
+            onClick={() => setShowMotivatorInfo(false)}
+            className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // INFO MODAL
+  const InfoModal = () => (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowInfo(false)}>
+      <div className="bg-white rounded-2xl p-6 max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold text-gray-800">How Scoring Works</h3>
+          <button onClick={() => setShowInfo(false)} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="space-y-4 text-gray-700">
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-1">Value / Meaning</h4>
+            <p className="text-sm">Based on what excites you and what need it solves. Higher scores suggest deeper resonance.</p>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-1">Energy / Enthusiasm</h4>
+            <p className="text-sm">Your gut feeling about this idea right now. Energy naturally fluctuates — low doesn't mean bad.</p>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-1">Alignment / Capacity</h4>
+            <p className="text-sm">How well this fits your current life season and bandwidth. This changes over time.</p>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h4 className="font-semibold text-gray-800 mb-2">Our Suggestions</h4>
+            <ul className="text-sm space-y-2">
+              <li><span className="font-semibold text-green-600">Grow:</span> High energy + high alignment — might feel good to explore</li>
+              <li><span className="font-semibold text-amber-600">Park:</span> Good idea, timing might not be right — safe to revisit later</li>
+              <li><span className="font-semibold text-blue-600">Release:</span> You've honored it by capturing it — letting go can be powerful</li>
+            </ul>
+          </div>
+
+          <p className="text-sm italic bg-teal-50 p-3 rounded-lg">
+            These are just suggestions based on the factors you shared. You know yourself best — trust your gut and choose what feels right.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // UNLOCK SELECT SCREEN
+  if (screen === 'unlock-select') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-fuchsia-50 to-pink-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <Unlock className="w-8 h-8 text-violet-600" />
+              <h2 className="text-2xl font-bold text-gray-800">What would help you move forward?</h2>
+            </div>
+            
+            <p className="text-gray-600 mb-6">Select up to 3 areas, then rank them. We'll focus on your top priority.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+              {unlockOptions.map((option) => {
+                const Icon = option.icon;
+                const isSelected = selectedUnlocks.includes(option.id);
+                const rank = selectedUnlocks.indexOf(option.id) + 1;
+                
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedUnlocks(selectedUnlocks.filter(id => id !== option.id));
+                      } else if (selectedUnlocks.length < 3) {
+                        setSelectedUnlocks([...selectedUnlocks, option.id]);
+                      }
+                    }}
+                    disabled={!isSelected && selectedUnlocks.length >= 3}
+                    className={`p-4 rounded-xl border-2 transition-all text-left relative ${
+                      isSelected
+                        ? `border-${option.color}-500 bg-${option.color}-50`
+                        : 'border-gray-200 hover:border-gray-300'
+                    } ${!isSelected && selectedUnlocks.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-6 h-6 ${isSelected ? `text-${option.color}-600` : 'text-gray-400'}`} />
+                      <span className="font-semibold text-gray-800">{option.label}</span>
+                    </div>
+                    {isSelected && (
+                      <div className={`absolute top-2 right-2 w-6 h-6 bg-${option.color}-500 text-white rounded-full flex items-center justify-center text-sm font-bold`}>
+                        {rank}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedUnlocks.length > 0 && (
+              <div className="bg-teal-50 rounded-xl p-4 mb-6">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Selected order:</span> {selectedUnlocks.map((id, idx) => {
+                    const option = unlockOptions.find(o => o.id === id);
+                    return `${idx + 1}. ${option.label}`;
+                  }).join(' · ')}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSelectedUnlocks([]);
+                  setScreen('garden');
+                }}
+                className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all"
+              >
+                Skip for Now
+              </button>
+              
+              <button
+                onClick={() => setScreen('unlock-guidance')}
+                disabled={selectedUnlocks.length === 0}
+                className={`flex-1 py-4 rounded-xl font-semibold transition-all ${
+                  selectedUnlocks.length > 0
+                    ? 'bg-violet-500 hover:bg-violet-600 text-white shadow-lg'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // UNLOCK GUIDANCE SCREEN
+  if (screen === 'unlock-guidance') {
+    const topUnlock = selectedUnlocks[0];
+    const unlockOption = unlockOptions.find(o => o.id === topUnlock);
+    const Icon = unlockOption.icon;
+    const questions = reflectiveQuestions[topUnlock];
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-fuchsia-50 to-pink-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={() => setScreen('unlock-select')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            ← Back
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <Icon className={`w-8 h-8 text-${unlockOption.color}-600`} />
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Next Unlock: {unlockOption.label}</h2>
+                <p className="text-sm text-gray-600">Your #1 priority</p>
+              </div>
+            </div>
+
+            <div className={`bg-${unlockOption.color}-50 rounded-xl p-6 mb-6`}>
+              <h3 className="font-semibold text-gray-800 mb-3">{getMomentumQuestion()}</h3>
+              <textarea
+                value={unlockAnswer}
+                onChange={(e) => setUnlockAnswer(e.target.value)}
+                placeholder="Your next step..."
+                className={`w-full p-4 border-2 border-${unlockOption.color}-200 rounded-xl focus:border-${unlockOption.color}-400 focus:outline-none resize-none bg-white`}
+                rows="3"
+              />
+            </div>
+
+            <button
+              onClick={() => setShowReflection(!showReflection)}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all mb-4"
+            >
+              <span className="font-semibold text-gray-700">Need to think it through first?</span>
+              {showReflection ? <ChevronUp className="w-5 h-5 text-gray-600" /> : <ChevronDown className="w-5 h-5 text-gray-600" />}
+            </button>
+
+            {showReflection && (
+              <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 mb-6 space-y-4">
+                {questions.map((q, idx) => (
+                  <div key={idx}>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{q}</p>
+                    <textarea
+                      value={currentIdea.reflectionAnswers[`${topUnlock}-${idx}`] || ''}
+                      onChange={(e) => setCurrentIdea({
+                        ...currentIdea,
+                        reflectionAnswers: {
+                          ...currentIdea.reflectionAnswers,
+                          [`${topUnlock}-${idx}`]: e.target.value
+                        }
+                      })}
+                      placeholder="Your thoughts..."
+                      className="w-full p-3 border-2 border-teal-200 rounded-lg focus:border-teal-400 focus:outline-none resize-none bg-white text-sm"
+                      rows="2"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  // Complete reset and clear pending
+                  setSelectedUnlocks([]);
+                  setUnlockAnswer('');
+                  setShowReflection(false);
+                  setPendingIdeaForUnlock(null);
+                  setScreen('garden');
+                }}
+                className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all"
+              >
+                Save Without Unlock
+              </button>
+              
+              <button
+                onClick={() => {
+                  saveUnlockToIdea();
+                }}
+                className="flex-1 py-4 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+              >
+                Save & Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // HOME SCREEN
+  if (screen === 'home') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex justify-center mb-6">
+            <div className="bg-white rounded-full p-1 shadow-lg inline-flex">
+              <button
+                onClick={() => setMode('personal')}
+                className={`px-6 py-2 rounded-full font-semibold transition-all flex items-center gap-2 ${
+                  mode === 'personal'
+                    ? 'bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <User className="w-4 h-4" />
+                Personal
+              </button>
+              <button
+                onClick={() => setMode('work')}
+                className={`px-6 py-2 rounded-full font-semibold transition-all flex items-center gap-2 ${
+                  mode === 'work'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Briefcase className="w-4 h-4" />
+                Work
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center mb-12">
+            <div className="inline-block p-4 bg-white rounded-full shadow-lg mb-4">
+              <Lightbulb className="w-12 h-12 text-amber-500" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-800 mb-3">Idea Navigator</h1>
+            <p className="text-lg text-gray-600">Capture the spark. Clarify the pull. Choose with peace.</p>
+            {motivator && (
+              <button 
+                onClick={() => setShowMotivatorInfo(true)}
+                className="text-sm text-indigo-600 mt-2 hover:text-indigo-700 flex items-center gap-1 mx-auto"
+              >
+                ✨ Personalized for {motivatorInfo[motivator].title}
+                <Info className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => {
+                resetIdea();
+                setScreen('capture');
+              }}
+              className="w-full bg-white hover:bg-amber-50 p-8 rounded-2xl shadow-lg transition-all hover:shadow-xl border-2 border-amber-200 hover:border-amber-300"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <Plus className="w-6 h-6 text-amber-600" />
+                <span className="text-xl font-semibold text-gray-800">Capture New Idea</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setScreen('garden')}
+              className="w-full bg-white hover:bg-green-50 p-8 rounded-2xl shadow-lg transition-all hover:shadow-xl border-2 border-green-200 hover:border-green-300"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <Sprout className="w-6 h-6 text-green-600" />
+                <span className="text-xl font-semibold text-gray-800">Visit Idea Garden</span>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">{filteredIdeas.length} {mode} ideas growing</p>
+            </button>
+
+            {!motivator && (
+              <button
+                onClick={() => setScreen('questionnaire')}
+                className="w-full bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 p-6 rounded-2xl shadow transition-all border-2 border-indigo-200"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <Settings className="w-5 h-5 text-indigo-600" />
+                  <span className="font-semibold text-gray-800">Take Motivator Quiz</span>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">Unlock personalized guidance</p>
+              </button>
+            )}
+          </div>
+
+          <div className="mt-12 p-6 bg-white/60 rounded-xl">
+            <p className="text-center text-gray-600 italic">
+              "Creativity isn't obligation — it's evidence of your aliveness."
+            </p>
+          </div>
+        </div>
+        {showMotivatorInfo && <MotivatorInfoModal />}
+      </div>
+    );
+  }
+
+  // CAPTURE SCREEN
+  if (screen === 'capture') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={() => setScreen('home')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            <Home className="w-4 h-4" /> Back to Home
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="flex items-center gap-2 mb-2">
+              {mode === 'personal' ? <User className="w-5 h-5 text-amber-600" /> : <Briefcase className="w-5 h-5 text-blue-600" />}
+              <span className="text-sm font-semibold text-gray-600 uppercase">{mode}</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Capture the Spark ✨</h2>
+            
+            <textarea
+              value={currentIdea.text}
+              onChange={(e) => setCurrentIdea({...currentIdea, text: e.target.value})}
+              placeholder="What's the idea? (One line is perfect)"
+              className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-amber-400 focus:outline-none resize-none"
+              rows="3"
+            />
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => currentIdea.text ? setScreen('clarify1') : null}
+                disabled={!currentIdea.text}
+                className={`flex-1 py-4 rounded-xl font-semibold transition-all ${
+                  currentIdea.text
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Next: Clarify
+              </button>
+            </div>
+
+            <p className="text-center text-sm text-gray-500 mt-6 italic">
+              Take a breath — this is just discovery, not decision.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // CLARIFY SCREENS (1-5)
+  if (screen === 'clarify1') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={() => setScreen('capture')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            ← Back
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-indigo-600">Step 1 of 5</span>
+                <div className="flex gap-1">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i === 1 ? 'bg-indigo-600' : 'bg-gray-300'}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              {getPersonalizedPrompt('excitement', 'What made this idea feel exciting?')}
+            </h2>
+            <p className="text-gray-600 mb-6 italic">"{currentIdea.text}"</p>
+            
+            <textarea
+              value={currentIdea.excitement}
+              onChange={(e) => setCurrentIdea({...currentIdea, excitement: e.target.value})}
+              placeholder="It could help people feel less overwhelmed..."
+              className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-indigo-400 focus:outline-none resize-none"
+              rows="4"
+            />
+
+            <button
+              onClick={() => setScreen('clarify2')}
+              className="mt-6 w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === 'clarify2') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={() => setScreen('clarify1')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            ← Back
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-indigo-600">Step 2 of 5</span>
+                <div className="flex gap-1">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i <= 2 ? 'bg-indigo-600' : 'bg-gray-300'}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              {getPersonalizedPrompt('need', 'What need would this solve — for you or others?')}
+            </h2>
+            
+            <textarea
+              value={currentIdea.need}
+              onChange={(e) => setCurrentIdea({...currentIdea, need: e.target.value})}
+              placeholder="It would reduce decision fatigue..."
+              className="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-indigo-400 focus:outline-none resize-none"
+              rows="4"
+            />
+
+            <button
+              onClick={() => setScreen('clarify3')}
+              className="mt-6 w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === 'clarify3') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={() => setScreen('clarify2')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            ← Back
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-indigo-600">Step 3 of 5</span>
+                <div className="flex gap-1">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i <= 3 ? 'bg-indigo-600' : 'bg-gray-300'}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">How much energy do you feel thinking about it?</h2>
+            
+            <div className="space-y-6">
+              <input
+                type="range"
+                min="0"
+                max="10"
+                value={currentIdea.energy}
+                onChange={(e) => setCurrentIdea({...currentIdea, energy: parseInt(e.target.value)})}
+                className="w-full h-3 bg-gradient-to-r from-gray-300 via-yellow-300 to-green-400 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Drained</span>
+                <span className="text-2xl font-bold text-indigo-600">{currentIdea.energy}</span>
+                <span>Energized</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setScreen('clarify4')}
+              className="mt-8 w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === 'clarify4') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={() => setScreen('clarify3')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            ← Back
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-indigo-600">Step 4 of 5</span>
+                <div className="flex gap-1">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className={`w-2 h-2 rounded-full ${i <= 4 ? 'bg-indigo-600' : 'bg-gray-300'}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Would working on this feel light or heavy?</h2>
+            
+            <div className="space-y-4">
+              {['Light and playful', 'Meaningful but manageable', 'Important but draining', 'Heavy and overwhelming'].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    setCurrentIdea({...currentIdea, feel: option});
+                    setTimeout(() => setScreen('clarify5'), 300);
+                  }}
+                  className={`w-full p-4 rounded-xl border-2 transition-all ${
+                    currentIdea.feel === option
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                  }`}
+                >
+                  <span className="font-medium text-gray-800">{option}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === 'clarify5') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={() => setScreen('clarify4')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            ← Back
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-indigo-600">Step 5 of 5</span>
+                <div className="flex gap-1">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className={`w-2 h-2 rounded-full bg-indigo-600`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Is this aligned with your current season?</h2>
+            
+            <div className="space-y-6">
+              <input
+                type="range"
+                min="0"
+                max="10"
+                value={currentIdea.alignment}
+                onChange={(e) => setCurrentIdea({...currentIdea, alignment: parseInt(e.target.value)})}
+                className="w-full h-3 bg-gradient-to-r from-red-300 via-yellow-300 to-green-400 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Not aligned</span>
+                <span className="text-2xl font-bold text-indigo-600">{currentIdea.alignment}</span>
+                <span>Perfectly aligned</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setScreen('classify')}
+              className="mt-8 w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+            >
+              See Your Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // CLASSIFY SCREEN
+  if (screen === 'classify') {
+    const value = Math.round((currentIdea.excitement.length / 10) + currentIdea.energy * 0.5);
+    const energy = currentIdea.energy;
+    const alignment = currentIdea.alignment;
+    
+    let recommendation = 'park';
+    let message = '';
+    let suggestionIntro = '';
+    
+    if (energy >= 7 && alignment >= 7) {
+      recommendation = 'run';
+      suggestionIntro = 'Based on your high energy and strong alignment, you might feel good exploring this now.';
+      message = 'This idea seems to light you up and fit your current season. What feels right to you?';
+    } else if (alignment < 4 || energy < 4) {
+      recommendation = 'release';
+      suggestionIntro = 'Your scores suggest this might not be the right timing.';
+      message = 'This idea served its purpose by sparking something in you. Releasing it could feel lighter than holding onto it. Does that resonate?';
+    } else {
+      recommendation = 'park';
+      suggestionIntro = 'This idea has potential, but your capacity or timing might need some breathing room.';
+      message = 'Parking this safely could give you peace to revisit it when your season shifts. How does that feel?';
+    }
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Your Idea Profile</h2>
+              <button
+                onClick={() => setShowInfo(true)}
+                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+              >
+                <Info className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+              <p className="text-gray-700 italic">"{currentIdea.text}"</p>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-gray-700">Value / Meaning</span>
+                  <span className="font-bold text-gray-800">{Math.min(value, 10)}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="h-3 rounded-full transition-all" 
+                    style={{
+                      width: `${Math.min(value, 10) * 10}%`,
+                      backgroundColor: Math.min(value, 10) >= 7 ? '#22c55e' : Math.min(value, 10) >= 4 ? '#eab308' : '#ef4444'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-gray-700">Energy / Enthusiasm</span>
+                  <span className="font-bold text-gray-800">{energy}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="h-3 rounded-full transition-all" 
+                    style={{
+                      width: `${energy * 10}%`,
+                      backgroundColor: energy >= 7 ? '#22c55e' : energy >= 4 ? '#eab308' : '#ef4444'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="font-semibold text-gray-700">Alignment / Capacity</span>
+                  <span className="font-bold text-gray-800">{alignment}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="h-3 rounded-full transition-all" 
+                    style={{
+                      width: `${alignment * 10}%`,
+                      backgroundColor: alignment >= 7 ? '#22c55e' : alignment >= 4 ? '#eab308' : '#ef4444'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={`p-6 rounded-xl mb-6 ${
+              recommendation === 'run' ? 'bg-green-100 border-2 border-green-400' :
+              recommendation === 'park' ? 'bg-amber-100 border-2 border-amber-400' :
+              'bg-blue-100 border-2 border-blue-400'
+            }`}>
+              <div className="flex items-center gap-3 mb-3">
+                {recommendation === 'run' && <Lightbulb className="w-6 h-6 text-green-700" />}
+                {recommendation === 'park' && <Pause className="w-6 h-6 text-amber-700" />}
+                {recommendation === 'release' && <Archive className="w-6 h-6 text-blue-700" />}
+                <h3 className="text-xl font-bold text-gray-800">
+                  {recommendation === 'run' ? '🚀 Grow' : 
+                   recommendation === 'park' ? '🌱 Park' : 
+                   '🕊️ Release'}
+                </h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-2 italic">{suggestionIntro}</p>
+              <p className="text-gray-700">{message}</p>
+            </div>
+
+            <div className="bg-teal-50 rounded-xl p-4 mb-6">
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Remember:</span> This is just a suggestion based on the factors you shared. You know yourself best — choose what feels right to you. You can always change its status in your Idea Garden if this doesn't quite fit.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                const finalStatus = recommendation === 'run' ? 'active' : recommendation === 'park' ? 'parked' : 'released';
+                saveIdea(finalStatus, {value: Math.min(value, 10), energy, alignment});
+              }}
+              className="w-full py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+            >
+              Save to Garden
+            </button>
+          </div>
+        </div>
+        {showInfo && <InfoModal />}
+      </div>
+    );
+  }
+
+  // COACH SCREEN
+  if (screen === 'coach') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">A Moment of Reflection 🌿</h2>
+            
+            <div className="bg-gradient-to-br from-teal-100 to-cyan-100 rounded-xl p-6 mb-6">
+              <p className="text-gray-800 text-lg leading-relaxed text-center">
+                "You don't have to decide now. The idea is safe here. Creativity isn't obligation — it's evidence of your aliveness."
+              </p>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-gray-800 mb-3">Your idea has been saved to your garden 🌱</h3>
+              <p className="text-gray-600">
+                {getPersonalizedCoaching()} You can revisit, edit, or move it anytime in your Idea Garden.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => setScreen('home')}
+                className="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-semibold transition-all shadow-lg"
+              >
+                Return Home
+              </button>
+              
+              <button
+                onClick={() => setScreen('garden')}
+                className="w-full py-4 bg-white hover:bg-gray-50 text-teal-600 border-2 border-teal-500 rounded-xl font-semibold transition-all"
+              >
+                Visit Idea Garden
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // IDEA DETAIL MODAL
+  const IdeaDetailModal = ({ idea }) => {
+    // Get fresh idea data from ideas array
+    const freshIdea = ideas.find(i => i.id === idea.id) || idea;
+    
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedText, setEditedText] = useState(freshIdea.text);
+    const [isEditingUnlock, setIsEditingUnlock] = useState(false);
+    const [editedUnlockAnswer, setEditedUnlockAnswer] = useState(freshIdea.unlockAnswer || '');
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedIdea(null)}>
+        <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-xl font-bold text-gray-800">Idea Details</h3>
+            <button onClick={() => setSelectedIdea(null)} className="text-gray-500 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {isEditing ? (
+            <div className="mb-4">
+              <textarea
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                className="w-full p-3 border-2 border-indigo-300 rounded-xl focus:outline-none focus:border-indigo-500 resize-none"
+                rows="3"
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => {
+                    updateIdeaText(freshIdea.id, editedText);
+                    setIsEditing(false);
+                  }}
+                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setEditedText(freshIdea.text);
+                    setIsEditing(false);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <p className="text-gray-800">{freshIdea.text}</p>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+              >
+                <Edit2 className="w-3 h-3" /> Edit idea
+              </button>
+            </div>
+          )}
+
+          {freshIdea.unlock && (
+            <div className="mb-4">
+              <div className="bg-violet-50 rounded-xl p-4 border-2 border-violet-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Unlock className="w-4 h-4 text-violet-600" />
+                    <span className="font-semibold text-sm text-violet-700">
+                      Next Unlock: {unlockOptions.find(o => o.id === freshIdea.unlock)?.label}
+                    </span>
+                  </div>
+                </div>
+                {isEditingUnlock ? (
+                  <div>
+                    <textarea
+                      value={editedUnlockAnswer}
+                      onChange={(e) => setEditedUnlockAnswer(e.target.value)}
+                      className="w-full p-3 border-2 border-violet-300 rounded-lg focus:outline-none focus:border-violet-500 resize-none text-sm"
+                      rows="2"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => {
+                          updateIdeaUnlock(freshIdea.id, freshIdea.unlock, editedUnlockAnswer);
+                          setIsEditingUnlock(false);
+                        }}
+                        className="px-3 py-1 bg-violet-500 text-white rounded text-sm hover:bg-violet-600"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditedUnlockAnswer(freshIdea.unlockAnswer);
+                          setIsEditingUnlock(false);
+                        }}
+                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">Next Step:</p>
+                    <p className="text-sm text-gray-700 mb-3">{freshIdea.unlockAnswer || 'No action defined yet'}</p>
+                    
+                    {freshIdea.reflectionAnswers && Object.keys(freshIdea.reflectionAnswers).length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-violet-200">
+                        <p className="text-xs font-semibold text-violet-700 mb-2">Reflections:</p>
+                        <div className="space-y-2">
+                          {Object.entries(freshIdea.reflectionAnswers).map(([key, answer]) => {
+                            if (!answer) return null;
+                            const [unlockType, questionIdx] = key.split('-');
+                            const questionsList = reflectiveQuestions[unlockType];
+                            const question = questionsList?.[parseInt(questionIdx)];
+                            
+                            return (
+                              <div key={key} className="bg-white/50 rounded p-2">
+                                <p className="text-xs text-gray-600 italic mb-1">"{question}"</p>
+                                <p className="text-xs text-gray-700">{answer}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={() => setIsEditingUnlock(true)}
+                      className="mt-2 text-xs text-violet-600 hover:text-violet-700 flex items-center gap-1"
+                    >
+                      <Edit2 className="w-3 h-3" /> Edit action
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3 mb-6">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Value / Meaning</span>
+              <span className="font-semibold text-gray-800">{freshIdea.value}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="h-2 rounded-full transition-all" 
+                style={{
+                  width: `${freshIdea.value * 10}%`,
+                  backgroundColor: freshIdea.value >= 7 ? '#22c55e' : freshIdea.value >= 4 ? '#eab308' : '#ef4444'
+                }}
+              />
+            </div>
+            
+            <div className="flex justify-between text-sm mt-3">
+              <span className="text-gray-600">Energy / Enthusiasm</span>
+              <span className="font-semibold text-gray-800">{freshIdea.energy}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="h-2 rounded-full transition-all" 
+                style={{
+                  width: `${freshIdea.energy * 10}%`,
+                  backgroundColor: freshIdea.energy >= 7 ? '#22c55e' : freshIdea.energy >= 4 ? '#eab308' : '#ef4444'
+                }}
+              />
+            </div>
+            
+            <div className="flex justify-between text-sm mt-3">
+              <span className="text-gray-600">Alignment / Capacity</span>
+              <span className="font-semibold text-gray-800">{freshIdea.alignment}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="h-2 rounded-full transition-all" 
+                style={{
+                  width: `${freshIdea.alignment * 10}%`,
+                  backgroundColor: freshIdea.alignment >= 7 ? '#22c55e' : freshIdea.alignment >= 4 ? '#eab308' : '#ef4444'
+                }}
+              />
+            </div>
+            
+            <div className="flex justify-between text-sm mt-3">
+              <span className="text-gray-600">Captured</span>
+              <span className="text-gray-500">{freshIdea.date}</span>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 space-y-2">
+            <p className="text-sm font-semibold text-gray-700 mb-3">Move to:</p>
+            <div className="flex gap-2">
+              {freshIdea.status !== 'active' && (
+                <button
+                  onClick={() => updateIdeaStatus(freshIdea.id, 'active')}
+                  className="flex-1 py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 flex items-center justify-center gap-1 text-sm"
+                >
+                  <Lightbulb className="w-4 h-4" /> Grow
+                </button>
+              )}
+              {freshIdea.status !== 'parked' && (
+                <button
+                  onClick={() => updateIdeaStatus(freshIdea.id, 'parked')}
+                  className="flex-1 py-2 px-3 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 flex items-center justify-center gap-1 text-sm"
+                >
+                  <Pause className="w-4 h-4" /> Park
+                </button>
+              )}
+              {freshIdea.status !== 'released' && (
+                <button
+                  onClick={() => updateIdeaStatus(freshIdea.id, 'released')}
+                  className="flex-1 py-2 px-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center justify-center gap-1 text-sm"
+                >
+                  <Archive className="w-4 h-4" /> Release
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => deleteIdea(freshIdea.id)}
+              className="w-full py-2 px-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 flex items-center justify-center gap-1 text-sm mt-3"
+            >
+              <Trash2 className="w-4 h-4" /> Delete Permanently
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // IDEA GARDEN
+  if (screen === 'garden') {
+    const activeIdeas = filteredIdeas.filter(i => i.status === 'active');
+    const parkedIdeas = filteredIdeas.filter(i => i.status === 'parked');
+    const releasedIdeas = filteredIdeas.filter(i => i.status === 'released');
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <button onClick={() => setScreen('home')} className="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+            <Home className="w-4 h-4" /> Back to Home
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                <Sprout className="w-8 h-8 text-green-600" />
+                Your {mode === 'personal' ? 'Personal' : 'Work'} Idea Garden
+              </h2>
+            </div>
+
+            {activeIdeas.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-green-700 mb-2 flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5" /> Grow ({activeIdeas.length})
+                </h3>
+                <p className="text-sm text-gray-600 mb-4 italic">
+                  These ideas are alive and ready. You're exploring them at your own pace.
+                </p>
+                <div className="space-y-3">
+                  {activeIdeas.map(idea => (
+                    <button
+                      key={idea.id}
+                      onClick={() => setSelectedIdea(idea)}
+                      className="w-full text-left bg-green-50 border-2 border-green-300 rounded-xl p-4 hover:bg-green-100 transition-all relative"
+                    >
+                      <div className="absolute top-3 right-3 text-green-600">
+                        <MoreVertical className="w-5 h-5" />
+                      </div>
+                      <p className="font-medium text-gray-800 mb-2 pr-8">{idea.text}</p>
+                      {idea.unlock && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-violet-100 text-violet-700 rounded-md text-xs font-semibold">
+                            <Unlock className="w-3 h-3" />
+                            {unlockOptions.find(o => o.id === idea.unlock)?.label}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex gap-4 text-sm text-gray-600">
+                        <span>Value: {idea.value}</span>
+                        <span>Energy: {idea.energy}</span>
+                        <span>Alignment: {idea.alignment}</span>
+                        <span className="ml-auto text-gray-500">{idea.date}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {parkedIdeas.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-amber-700 mb-2 flex items-center gap-2">
+                  <Pause className="w-5 h-5" /> Park ({parkedIdeas.length})
+                </h3>
+                <p className="text-sm text-gray-600 mb-4 italic">
+                  These ideas are resting safely. You can revisit them whenever your season shifts.
+                </p>
+                <div className="space-y-3">
+                  {parkedIdeas.map(idea => (
+                    <button
+                      key={idea.id}
+                      onClick={() => setSelectedIdea(idea)}
+                      className="w-full text-left bg-amber-50 border-2 border-amber-300 rounded-xl p-4 hover:bg-amber-100 transition-all relative"
+                    >
+                      <div className="absolute top-3 right-3 text-amber-600">
+                        <MoreVertical className="w-5 h-5" />
+                      </div>
+                      <p className="font-medium text-gray-800 mb-2 pr-8">{idea.text}</p>
+                      <div className="flex gap-4 text-sm text-gray-600">
+                        <span>Value: {idea.value}</span>
+                        <span>Energy: {idea.energy}</span>
+                        <span>Alignment: {idea.alignment}</span>
+                        <span className="ml-auto text-gray-500">{idea.date}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {releasedIdeas.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                  <Archive className="w-5 h-5" /> Release ({releasedIdeas.length})
+                </h3>
+                <p className="text-sm text-gray-600 mb-4 italic">
+                  These ideas served their purpose. You honored them by letting go — that's creative wisdom.
+                </p>
+                <div className="space-y-3">
+                  {releasedIdeas.map(idea => (
+                    <button
+                      key={idea.id}
+                      onClick={() => setSelectedIdea(idea)}
+                      className="w-full text-left bg-blue-50 border-2 border-blue-300 rounded-xl p-4 hover:bg-blue-100 transition-all relative"
+                    >
+                      <div className="absolute top-3 right-3 text-blue-600">
+                        <MoreVertical className="w-5 h-5" />
+                      </div>
+                      <p className="font-medium text-gray-800 mb-2 pr-8">{idea.text}</p>
+                      <div className="flex gap-4 text-sm text-gray-600">
+                        <span>Value: {idea.value}</span>
+                        <span>Energy: {idea.energy}</span>
+                        <span>Alignment: {idea.alignment}</span>
+                        <span className="ml-auto text-gray-500">{idea.date}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeIdeas.length === 0 && parkedIdeas.length === 0 && releasedIdeas.length === 0 && (
+              <div className="text-center py-12">
+                <Sprout className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-6">No {mode} ideas yet. Plant your first seed!</p>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                resetIdea();
+                setScreen('capture');
+              }}
+              className="w-full py-4 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <Plus className="w-5 h-5" /> Plant a New Idea
+            </button>
+          </div>
+        </div>
+        {selectedIdea && <IdeaDetailModal idea={selectedIdea} />}
+      </div>
+    );
+  }
+
+  return null;
+}
