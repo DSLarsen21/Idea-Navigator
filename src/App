@@ -1,33 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { Lightbulb, Sprout, Pause, Archive, Home, Plus, Info, X, Edit2, Trash2, MoreVertical, Briefcase, User, Settings, DollarSign, GraduationCap, Clock, Users, Compass, Wrench, Heart, ChevronDown, ChevronUp, Unlock } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Lightbulb, Sprout, Pause, Archive, Home, Plus, Info, X, Edit2, Trash2,
+  MoreVertical, Briefcase, User, Settings, DollarSign, GraduationCap, Clock,
+  Users, Compass, Wrench, Heart, ChevronDown, ChevronUp, Unlock
+} from "lucide-react";
 
 export default function IdeaNavigator() {
-  // Initialize state from localStorage or defaults
-  const [screen, setScreen] = useState('welcome');
-  const [mode, setMode] = useState(() => localStorage.getItem('mode') || 'personal');
+  const [screen, setScreen] = useState("welcome");
+  const [mode, setMode] = useState(localStorage.getItem("mode") || "personal");
   const [showInfo, setShowInfo] = useState(false);
   const [showMotivatorInfo, setShowMotivatorInfo] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState(null);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [motivator, setMotivator] = useState(() => localStorage.getItem('motivator') || null);
-  const [unlockStep, setUnlockStep] = useState('select');
+  const [motivator, setMotivator] = useState(localStorage.getItem("motivator") || null);
+  const [unlockStep, setUnlockStep] = useState("select");
   const [selectedUnlocks, setSelectedUnlocks] = useState([]);
-  const [unlockAnswer, setUnlockAnswer] = useState('');
+  const [unlockAnswer, setUnlockAnswer] = useState("");
   const [showReflection, setShowReflection] = useState(false);
   const [pendingIdeaForUnlock, setPendingIdeaForUnlock] = useState(null);
   const [currentIdea, setCurrentIdea] = useState({
-    text: '',
-    excitement: '',
-    need: '',
+    text: "",
+    excitement: "",
+    need: "",
     energy: 5,
-    feel: '',
+    feel: "",
     alignment: 5,
-    mode: 'personal',
+    mode: "personal",
     unlock: null,
-    unlockAnswer: '',
+    unlockAnswer: "",
     reflectionAnswers: {}
   });
+
   const [ideas, setIdeas] = useState(() => {
     const saved = localStorage.getItem('ideas');
     return saved ? JSON.parse(saved) : [
@@ -39,13 +43,12 @@ export default function IdeaNavigator() {
     ];
   });
 
-  // Save to localStorage whenever ideas, mode, or motivator changes
   useEffect(() => {
     localStorage.setItem('ideas', JSON.stringify(ideas));
   }, [ideas]);
 
   useEffect(() => {
-    localStorage.setItem('mode', mode);
+    localStorage.setItem("mode", mode);
   }, [mode]);
 
   useEffect(() => {
@@ -54,7 +57,6 @@ export default function IdeaNavigator() {
     }
   }, [motivator]);
 
-  // Check if user has completed welcome flow
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
     if (hasSeenWelcome && !motivator) {
@@ -345,55 +347,27 @@ export default function IdeaNavigator() {
 
   const filteredIdeas = ideas.filter(i => i.mode === mode);
 
-  // WELCOME SCREEN
-  if (screen === 'welcome') {
+if (screen === "welcome") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6 flex items-center justify-center">
-        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="inline-block p-4 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full shadow-lg mb-4">
-              <Lightbulb className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-3">Welcome to Idea Navigator</h1>
-            <p className="text-lg text-gray-600">Capture the spark. Clarify the pull. Choose with peace.</p>
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="inline-block p-4 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full shadow-lg mb-4">
+            <Lightbulb className="w-12 h-12 text-white" />
           </div>
-
-          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">✨ Unlock Personalized Guidance</h2>
-            <p className="text-gray-700 mb-4">
-              Take a quick 2-minute questionnaire to discover what drives you. We'll tailor every suggestion to match your unique motivations.
-            </p>
-            <p className="text-sm text-gray-600 italic">
-              This helps us speak your language and guide you in ways that actually resonate.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <button
-              onClick={() => setScreen('questionnaire')}
-              className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl font-semibold transition-all shadow-lg"
-            >
-              Take the Questionnaire
-            </button>
-            
-            <button
-              onClick={() => setScreen('home')}
-              className="w-full py-4 bg-white hover:bg-gray-50 text-gray-600 border-2 border-gray-300 rounded-xl font-semibold transition-all"
-            >
-              Skip for Now
-            </button>
-          </div>
-
-          <p className="text-center text-xs text-gray-500 mt-4">
-            You can take this questionnaire anytime from settings
-          </p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-3">Welcome to Idea Navigator</h1>
+          <p className="text-lg text-gray-600">Capture the spark. Clarify the pull. Choose with peace.</p>
+          <button onClick={() => setScreen("questionnaire")} className="w-full py-4 bg-indigo-500 text-white rounded-xl mt-6">
+            Take the Questionnaire
+          </button>
+          <button onClick={() => setScreen("home")} className="w-full py-4 bg-gray-200 text-gray-700 rounded-xl mt-2">
+            Skip for Now
+          </button>
         </div>
       </div>
     );
   }
 
-  // QUESTIONNAIRE SCREEN
-  if (screen === 'questionnaire') {
+if (screen === 'questionnaire') {
     const currentQuestion = questions[questionIndex];
     const progress = ((questionIndex + 1) / questions.length) * 100;
 
@@ -462,8 +436,7 @@ export default function IdeaNavigator() {
     );
   }
 
-  // MOTIVATOR RESULT SCREEN
-  if (screen === 'motivator-result') {
+if (screen === 'motivator-result') {
     const info = motivatorInfo[motivator];
     const colorClasses = {
       blue: 'from-blue-400 to-cyan-400',
@@ -500,7 +473,6 @@ export default function IdeaNavigator() {
     );
   }
 
-  // MOTIVATOR INFO MODAL
   const MotivatorInfoModal = () => {
     const info = motivatorInfo[motivator];
     const colorClasses = {
@@ -539,7 +511,6 @@ export default function IdeaNavigator() {
     );
   };
 
-  // INFO MODAL
   const InfoModal = () => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowInfo(false)}>
       <div className="bg-white rounded-2xl p-6 max-w-lg" onClick={(e) => e.stopPropagation()}>
@@ -583,8 +554,7 @@ export default function IdeaNavigator() {
     </div>
   );
 
-  // UNLOCK SELECT SCREEN
-  if (screen === 'unlock-select') {
+if (screen === 'unlock-select') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 via-fuchsia-50 to-pink-50 p-6">
         <div className="max-w-2xl mx-auto">
@@ -673,8 +643,7 @@ export default function IdeaNavigator() {
     );
   }
 
-  // UNLOCK GUIDANCE SCREEN
-  if (screen === 'unlock-guidance') {
+if (screen === 'unlock-guidance') {
     const topUnlock = selectedUnlocks[0];
     const unlockOption = unlockOptions.find(o => o.id === topUnlock);
     const Icon = unlockOption.icon;
@@ -741,7 +710,6 @@ export default function IdeaNavigator() {
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  // Complete reset and clear pending
                   setSelectedUnlocks([]);
                   setUnlockAnswer('');
                   setShowReflection(false);
@@ -768,7 +736,6 @@ export default function IdeaNavigator() {
     );
   }
 
-  // HOME SCREEN
   if (screen === 'home') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-6">
@@ -867,7 +834,6 @@ export default function IdeaNavigator() {
     );
   }
 
-  // CAPTURE SCREEN
   if (screen === 'capture') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-6">
@@ -914,8 +880,7 @@ export default function IdeaNavigator() {
     );
   }
 
-  // CLARIFY SCREENS (1-5)
-  if (screen === 'clarify1') {
+if (screen === 'clarify1') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
         <div className="max-w-2xl mx-auto">
@@ -1150,7 +1115,6 @@ export default function IdeaNavigator() {
     );
   }
 
-  // CLASSIFY SCREEN
   if (screen === 'classify') {
     const value = Math.round((currentIdea.excitement.length / 10) + currentIdea.energy * 0.5);
     const energy = currentIdea.energy;
@@ -1283,7 +1247,6 @@ export default function IdeaNavigator() {
     );
   }
 
-  // COACH SCREEN
   if (screen === 'coach') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 p-6">
@@ -1325,9 +1288,7 @@ export default function IdeaNavigator() {
     );
   }
 
-  // IDEA DETAIL MODAL
   const IdeaDetailModal = ({ idea }) => {
-    // Get fresh idea data from ideas array
     const freshIdea = ideas.find(i => i.id === idea.id) || idea;
     
     const [isEditing, setIsEditing] = useState(false);
@@ -1554,7 +1515,6 @@ export default function IdeaNavigator() {
     );
   };
 
-  // IDEA GARDEN
   if (screen === 'garden') {
     const activeIdeas = filteredIdeas.filter(i => i.status === 'active');
     const parkedIdeas = filteredIdeas.filter(i => i.status === 'parked');
